@@ -45,6 +45,10 @@ export const adminLinks: AdminLinks = [
 				label: 'Discount'
 			},
 			{
+				href: '/admin/promo-code',
+				label: 'Promo codes'
+			},
+			{
 				href: '/admin/theme',
 				label: 'Themes'
 			},

@@ -291,12 +291,29 @@ export async function load(params) {
 					runtimeConfig.deliveryFees
 			  )
 			: NaN;
+	// Apply promo code discount to cart price if one is set
+	let cartPromoDiscount: { type: 'percentage' | 'fiat'; amount: number } | undefined;
+	if (cart.appliedPromoCode) {
+		const now = new Date();
+		const promoCode = await collections.promoCodes.findOne({
+			_id: cart.appliedPromoCode.promoCodeId,
+			code: cart.appliedPromoCode.code,
+			active: true,
+			beginsAt: { $lte: now },
+			$or: [{ endsAt: null }, { endsAt: { $gt: now } }]
+		});
+		if (promoCode && (promoCode.maxUses === null || promoCode.usedCount < promoCode.maxUses)) {
+			cartPromoDiscount = { type: promoCode.discountType, amount: promoCode.discountValue };
+		}
+	}
+
 	const cartPriceInfo = computePriceInfo(cartItems, {
 		bebopCountry: runtimeConfig.vatCountry,
 		deliveryFees: {
 			amount: deliveryFees || 0,
 			currency: UNDERLYING_CURRENCY
 		},
+		discount: cartPromoDiscount,
 		freeProductUnits: cartFreeProductUnits,
 		userCountry: locals.countryCode,
 		vatExempted: runtimeConfig.vatExempted,
@@ -385,7 +402,9 @@ export async function load(params) {
 		cart: {
 			items: cartItems,
 			freeProductUnits: cartFreeProductUnits,
-			priceInfo: cartPriceInfo
+			priceInfo: cartPriceInfo,
+			appliedPromoCode: cart.appliedPromoCode,
+			promoCodeDiscount: cartPromoDiscount
 		},
 		confirmationBlocksThresholds: runtimeConfig.confirmationBlocksThresholds,
 		cartMaxSeparateItems: runtimeConfig.cartMaxSeparateItems,

@@ -25,6 +25,45 @@
 	let errorMessage = data.errorMessage;
 	let errorProductId = '';
 
+	// Promo code
+	let promoCodeInput = '';
+	let promoCodeApplied = data.cart?.appliedPromoCode ?? null;
+	let promoCodeInfo: { discountType: string; discountValue: number; currency?: string } | null = null;
+	let promoCodeError = '';
+	let promoCodeLoading = false;
+
+	async function applyPromoCode() {
+		promoCodeError = '';
+		promoCodeLoading = true;
+		try {
+			const res = await fetch('/cart/promo', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ code: promoCodeInput })
+			});
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}));
+				promoCodeError = body.message ?? 'Invalid promo code';
+			} else {
+				promoCodeInfo = await res.json();
+				promoCodeApplied = { code: promoCodeInput.toUpperCase(), promoCodeId: '' };
+				promoCodeInput = '';
+				await invalidate('data:cart');
+			}
+		} finally {
+			promoCodeLoading = false;
+		}
+	}
+
+	async function removePromoCode() {
+		promoCodeLoading = true;
+		await fetch('/cart/promo', { method: 'DELETE' });
+		promoCodeApplied = null;
+		promoCodeInfo = null;
+		await invalidate('data:cart');
+		promoCodeLoading = false;
+	}
+
 	$: items = data.cart?.items ?? [];
 	$: deliveryFees =
 		data.countryCode && isAlpha2CountryCode(data.countryCode)
@@ -333,6 +372,27 @@
 					</div>
 				</div>
 			{/each}
+			{#if priceInfo?.discount}
+				<div class="flex justify-end border-b border-gray-300 pb-4 gap-6">
+					<h2 class="text-[24px] text-green-600">
+						{promoCodeApplied?.code ? `Code ${promoCodeApplied.code}` : 'Discount'}:
+					</h2>
+					<div class="flex flex-col items-end">
+						<PriceTag
+							amount={-priceInfo.discount}
+							currency={priceInfo.currency}
+							main
+							class="text-[24px] text-green-600"
+						/>
+						<PriceTag
+							amount={-priceInfo.discount}
+							currency={priceInfo.currency}
+							secondary
+							class="text-base text-green-600"
+						/>
+					</div>
+				</div>
+			{/if}
 			<div class="flex justify-end border-b border-gray-300 pb-6 gap-6">
 				<h2 class="text-[32px]">{t('cart.total')}:</h2>
 				<div class="flex flex-col items-end">
@@ -377,6 +437,48 @@
 					<p class="text-red-500 font-light">{t('cart.minimumPhysicalAmountText')}</p>
 				{/if}
 			</div>
+			<div class="flex justify-end mt-2 mb-4">
+				{#if promoCodeApplied}
+					<div class="flex items-center gap-2 border border-green-500 rounded px-3 py-2 text-sm">
+						<span class="text-green-600 font-mono font-semibold">{promoCodeApplied.code}</span>
+						{#if promoCodeInfo}
+							<span class="text-green-600">
+								— {promoCodeInfo.discountType === 'percentage'
+									? `${promoCodeInfo.discountValue}% off`
+									: `${promoCodeInfo.discountValue} ${promoCodeInfo.currency ?? ''} off`}
+							</span>
+						{/if}
+						<button
+							type="button"
+							class="text-gray-400 hover:text-red-500 ml-2"
+							on:click={removePromoCode}
+							disabled={promoCodeLoading}
+						>✕</button>
+					</div>
+				{:else}
+					<div class="flex flex-col gap-1 items-end">
+						<div class="flex gap-2">
+							<input
+								class="form-input text-sm w-36"
+								type="text"
+								bind:value={promoCodeInput}
+								placeholder="Promo code"
+								maxlength="50"
+							/>
+							<button
+								type="button"
+								class="btn btn-blue text-white text-sm"
+								on:click={applyPromoCode}
+								disabled={!promoCodeInput || promoCodeLoading}
+							>Apply</button>
+						</div>
+						{#if promoCodeError}
+							<p class="text-red-500 text-xs">{promoCodeError}</p>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
 			<form action="/checkout" class="flex justify-end">
 				<button
 					class="btn body-cta body-mainCTA"

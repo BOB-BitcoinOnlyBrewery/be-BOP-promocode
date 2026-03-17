@@ -35,4 +35,8 @@ export interface Cart extends Timestamps {
 	orderTabSlug?: string;
 	orderTabId?: ObjectId;
 	splitMode?: 'items' | 'shares';
+	appliedPromoCode?: {
+		code: string;
+		promoCodeId: string;
+	};
 }

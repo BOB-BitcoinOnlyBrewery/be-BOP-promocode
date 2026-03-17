@@ -53,6 +53,7 @@ import type { OrderTab } from '$lib/types/OrderTab';
 import type { PosPaymentSubtype } from '$lib/types/PosPaymentSubtype';
 import type { PosSession } from '$lib/types/PosSession';
 import type { PendingZap } from '$lib/types/PendingZap';
+import type { PromoCode } from '$lib/types/PromoCode';
 
 // Bigger than the default 10, helpful with MongoDB errors
 Error.stackTraceLimit = 100;
@@ -97,6 +98,7 @@ const genCollection = () => ({
 	roles: db.collection<Role>('roles'),
 	users: db.collection<User>('users'),
 	discounts: db.collection<Discount>('discounts'),
+	promoCodes: db.collection<PromoCode>('promoCodes'),
 	sessions: db.collection<Session>('sessions'),
 	migrations: db.collection<Migration>('migrations'),
 	tags: db.collection<Tag>('tags'),

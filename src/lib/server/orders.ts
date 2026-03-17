@@ -58,6 +58,7 @@ import type { UserIdentifier } from '$lib/types/UserIdentifier';
 import type { PaymentMethod, PaymentProcessor } from './payment-methods';
 import type { CountryAlpha2 } from '$lib/types/Country';
 import type { LanguageKey } from '$lib/translations';
+import type { PromoCode } from '$lib/types/PromoCode';
 import { filterNullish } from '$lib/utils/fillterNullish';
 import { toUrlEncoded } from '$lib/utils/toUrlEncoded';
 import { isPhoenixdConfigured, phoenixdCreateInvoice } from './phoenixd';
@@ -716,8 +717,27 @@ export async function createOrder(
 		}
 	}
 
-	const discountInfo =
-		params.user.userHasPosOptions && params?.discount?.amount ? params.discount : undefined;
+	// Promo code lookup
+	let promoCodeApplied: PromoCode | undefined;
+	if (params.cart?.appliedPromoCode) {
+		const now = new Date();
+		const promoCode = await collections.promoCodes.findOne({
+			_id: params.cart.appliedPromoCode.promoCodeId,
+			code: params.cart.appliedPromoCode.code,
+			active: true,
+			beginsAt: { $lte: now },
+			$or: [{ endsAt: null }, { endsAt: { $gt: now } }]
+		});
+		if (promoCode && (promoCode.maxUses === null || promoCode.usedCount < promoCode.maxUses)) {
+			promoCodeApplied = promoCode;
+		}
+	}
+
+	const discountInfo = promoCodeApplied
+		? { type: promoCodeApplied.discountType, amount: promoCodeApplied.discountValue }
+		: params.user.userHasPosOptions && params?.discount?.amount
+		? params.discount
+		: undefined;
 
 	const vatProfiles = products.some((p) => p.vatProfileId)
 		? await collections.vatProfiles
@@ -836,6 +856,30 @@ export async function createOrder(
 		vatSingleCountry: runtimeConfig.vatSingleCountry
 	});
 
+	// Validate promo code minimum amount (without applying the discount)
+	if (promoCodeApplied?.minimumAmount !== undefined) {
+		const priceForCheck = computePriceInfo(items, {
+			bebopCountry: runtimeConfig.vatCountry,
+			deliveryFees: shippingPrice,
+			freeProductUnits: await freeProductsForUser(params.user, items.map((item) => item.product._id)),
+			userCountry: params.userVatCountry,
+			vatExempted,
+			vatNullOutsideSellerCountry: runtimeConfig.vatNullOutsideSellerCountry,
+			vatProfiles,
+			vatSingleCountry: runtimeConfig.vatSingleCountry
+		});
+		const cartTotal =
+			promoCodeApplied.currency && promoCodeApplied.currency !== priceForCheck.currency
+				? toCurrency(promoCodeApplied.currency, priceForCheck.totalPriceWithVat, priceForCheck.currency)
+				: priceForCheck.totalPriceWithVat;
+		if (cartTotal < promoCodeApplied.minimumAmount) {
+			throw error(
+				400,
+				`Minimum order of ${promoCodeApplied.minimumAmount}${promoCodeApplied.currency ?? ''} required for promo code ${promoCodeApplied.code}`
+			);
+		}
+	}
+
 	for (const { item, price } of items.map((item, i) => ({ item, price: priceInfo.perItem[i] }))) {
 		if (price.usedFreeUnits) {
 			let quantityToConsume = price.usedFreeUnits;
@@ -895,32 +939,34 @@ export async function createOrder(
 		currency: Currency;
 		amount: number;
 	} | null = null;
-	if (priceInfo.discount && params.discount && params.user.userHasPosOptions) {
+	if (priceInfo.discount && discountInfo) {
 		discount = {
-			currency: params.discount.type === 'fiat' ? runtimeConfig.mainCurrency : 'SAT',
-			amount: params.discount.type === 'fiat' ? params?.discount?.amount : priceInfo.discount
+			currency: discountInfo.type === 'fiat' ? runtimeConfig.mainCurrency : 'SAT',
+			amount: discountInfo.type === 'fiat' ? discountInfo.amount : priceInfo.discount
 		};
 
-		await collections.emailNotifications.insertOne({
-			_id: new ObjectId(),
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			subject: 'NEW DISCOUNT',
-			htmlContent: `A discount of ${params?.discount?.amount}${
-				params.discount.type === 'fiat' ? runtimeConfig.mainCurrency : '%'
-			} (${toCurrency(
-				'SAT',
-				priceInfo.discount,
-				priceInfo.currency
-			)} SAT) has been applied to the <a href="${ORIGIN}/order/${orderId}">order ${orderNumber}</a> (${toCurrency(
-				runtimeConfig.mainCurrency,
-				totalSatoshis,
-				'SAT'
-			)}${runtimeConfig.mainCurrency}). The discount was applied by ${
-				params.user.userLogin
-			}. Justification: ${params?.discount?.justification ?? '-'} `,
-			dest: runtimeConfig.sellerIdentity?.contact.email || SMTP_USER
-		});
+		if (params.discount && params.user.userHasPosOptions) {
+			await collections.emailNotifications.insertOne({
+				_id: new ObjectId(),
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				subject: 'NEW DISCOUNT',
+				htmlContent: `A discount of ${params?.discount?.amount}${
+					params.discount.type === 'fiat' ? runtimeConfig.mainCurrency : '%'
+				} (${toCurrency(
+					'SAT',
+					priceInfo.discount,
+					priceInfo.currency
+				)} SAT) has been applied to the <a href="${ORIGIN}/order/${orderId}">order ${orderNumber}</a> (${toCurrency(
+					runtimeConfig.mainCurrency,
+					totalSatoshis,
+					'SAT'
+				)}${runtimeConfig.mainCurrency}). The discount was applied by ${
+					params.user.userLogin
+				}. Justification: ${params?.discount?.justification ?? '-'} `,
+				dest: runtimeConfig.sellerIdentity?.contact.email || SMTP_USER
+			});
+		}
 	}
 
 	const subscriptions = items.filter((item) => item.product.type === 'subscription');
@@ -1435,11 +1481,13 @@ export async function createOrder(
 					}
 				}),
 				...(discount &&
-					params.discount && {
+					discountInfo && {
 						discount: {
 							price: discount,
-							justification: params.discount.justification,
-							type: params.discount.type
+							justification: promoCodeApplied
+								? `Promo code: ${promoCodeApplied.code}`
+								: params.discount?.justification ?? "",
+							type: discountInfo.type as DiscountType
 						}
 					}),
 				...(params.clientIp && { clientIp: params.clientIp }),
@@ -1649,6 +1697,14 @@ export async function createOrder(
 				})
 			};
 			await collections.orders.insertOne(order, { session });
+
+			if (promoCodeApplied) {
+				await collections.promoCodes.updateOne(
+					{ _id: promoCodeApplied._id },
+					{ $inc: { usedCount: 1 }, $set: { updatedAt: new Date() } },
+					{ session }
+				);
+			}
 
 			let orderPayment: OrderPayment | undefined = undefined;
 			if (paymentMethod) {

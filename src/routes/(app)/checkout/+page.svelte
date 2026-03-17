@@ -124,7 +124,7 @@
 					type: discountType,
 					amount: discountAmount
 			  }
-			: undefined;
+			: data.cart.promoCodeDiscount ?? undefined;
 
 	// A PoS operator may apply different discounts, such as on-site promotions or free delivery;
 	// thus, the price info is computed from scratch to reflect the correct value.
@@ -921,6 +921,28 @@
 				{/each}
 
 				<span class="py-1" />
+
+				{#if priceInfo?.discount}
+					<div class="-mx-3 p-3 flex flex-col border-b border-gray-300">
+						<div class="flex justify-between">
+							<span class="text-xl text-green-600">
+								{data.cart.appliedPromoCode?.code ? `Code ${data.cart.appliedPromoCode.code}` : 'Discount'}
+							</span>
+							<PriceTag
+								class="text-2xl text-green-600"
+								amount={-priceInfo.discount}
+								currency={UNDERLYING_CURRENCY}
+								main
+							/>
+						</div>
+						<PriceTag
+							class="self-end text-green-600"
+							amount={-priceInfo.discount}
+							currency={UNDERLYING_CURRENCY}
+							secondary
+						/>
+					</div>
+				{/if}
 
 				<div class="-mx-3 p-3 flex flex-col">
 					<div class="flex justify-between">
