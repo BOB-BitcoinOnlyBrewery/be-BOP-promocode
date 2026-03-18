@@ -366,8 +366,8 @@
 >
 	<fieldset class="contents" disabled={submitting}>
 		<!-- Essential Information - Always Visible -->
-		<div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-			<h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+		<div class="bg-transparent border border-gray-500 rounded-lg p-6 shadow-sm">
+			<h2 class="text-xl font-semibold  mb-4 flex items-center">
 				Essential Information
 			</h2>
 
@@ -452,7 +452,7 @@
 				</a>
 
 				{#if displayVATCalculator}
-					<div class="bg-gray-50 p-4 rounded-lg">
+					<div class="bg-transparent p-4 rounded-lg">
 						<div class="gap-4 flex flex-col md:flex-row">
 							<label class="w-full">
 								Price amount (VAT included)
@@ -518,9 +518,9 @@
 		</div>
 
 		<!-- Basic Settings - Collapsible -->
-		<details class="bg-white border border-gray-200 rounded-lg shadow-sm">
+		<details class="bg-transparent border border-gray-500 rounded-lg shadow-sm">
 			<summary
-				class="p-4 cursor-pointer hover:bg-gray-50 rounded-lg font-medium text-gray-900 flex items-center"
+				class="p-4 cursor-pointer hover:bg-transparent rounded-lg font-medium flex items-center"
 			>
 				<svg
 					class="w-5 h-5 mr-2 transition-transform"
@@ -625,9 +625,9 @@
 		</details>
 
 		<!-- Pricing Options - Collapsible -->
-		<details class="bg-white border border-gray-200 rounded-lg shadow-sm">
+		<details class="bg-transparent border border-gray-500 rounded-lg shadow-sm">
 			<summary
-				class="p-4 cursor-pointer hover:bg-gray-50 rounded-lg font-medium text-gray-900 flex items-center"
+				class="p-4 cursor-pointer hover:bg-transparent rounded-lg font-medium flex items-center"
 			>
 				<svg
 					class="w-5 h-5 mr-2 transition-transform"
@@ -962,9 +962,9 @@
 		</details>
 
 		<!-- Inventory & Stock - Collapsible -->
-		<details class="bg-white border border-gray-200 rounded-lg shadow-sm">
+		<details class="bg-transparent border border-gray-500 rounded-lg shadow-sm">
 			<summary
-				class="p-4 cursor-pointer hover:bg-gray-50 rounded-lg font-medium text-gray-900 flex items-center"
+				class="p-4 cursor-pointer hover:bg-transparent rounded-lg font-medium flex items-center"
 			>
 				<svg
 					class="w-5 h-5 mr-2 transition-transform"
@@ -1137,9 +1137,9 @@
 
 		<!-- Booking & Tickets - Collapsible -->
 		{#if product.type === 'resource'}
-			<details class="bg-white border border-gray-200 rounded-lg shadow-sm">
+			<details class="bg-transparent border border-gray-500 rounded-lg shadow-sm">
 				<summary
-					class="p-4 cursor-pointer hover:bg-gray-50 rounded-lg font-medium text-gray-900 flex items-center"
+					class="p-4 cursor-pointer hover:bg-transparent rounded-lg font-medium flex items-center"
 				>
 					<svg
 						class="w-5 h-5 mr-2 transition-transform"
@@ -1278,9 +1278,9 @@
 
 		<!-- Delivery & Shipping - Collapsible -->
 		{#if product.type !== 'donation'}
-			<details class="bg-white border border-gray-200 rounded-lg shadow-sm">
+			<details class="bg-transparent border border-gray-500 rounded-lg shadow-sm">
 				<summary
-					class="p-4 cursor-pointer hover:bg-gray-50 rounded-lg font-medium text-gray-900 flex items-center"
+					class="p-4 cursor-pointer hover:bg-transparent rounded-lg font-medium flex items-center"
 				>
 					<svg
 						class="w-5 h-5 mr-2 transition-transform"
@@ -1350,9 +1350,9 @@
 		{/if}
 
 		<!-- Display Settings - Collapsible -->
-		<details class="bg-white border border-gray-200 rounded-lg shadow-sm">
+		<details class="bg-transparent border border-gray-500 rounded-lg shadow-sm">
 			<summary
-				class="p-4 cursor-pointer hover:bg-gray-50 rounded-lg font-medium text-gray-900 flex items-center"
+				class="p-4 cursor-pointer hover:bg-transparent rounded-lg font-medium flex items-center"
 			>
 				<svg
 					class="w-5 h-5 mr-2 transition-transform"
@@ -1433,7 +1433,7 @@
 				</div>
 
 				<div>
-					<h4 class="text-lg font-medium text-gray-900 mb-3">Action Settings</h4>
+					<h4 class="text-lg font-medium mb-3">Action Settings</h4>
 					<div class="overflow-x-auto">
 						<table class="w-full border border-gray-300 divide-y divide-gray-300 text-sm">
 							<thead class="bg-gray-100">
@@ -1517,9 +1517,9 @@
 		</details>
 
 		<!-- Advanced Features - Collapsible -->
-		<details class="bg-white border border-gray-200 rounded-lg shadow-sm">
+		<details class="bg-transparent border border-gray-500 rounded-lg shadow-sm">
 			<summary
-				class="p-4 cursor-pointer hover:bg-gray-50 rounded-lg font-medium text-gray-900 flex items-center"
+				class="p-4 cursor-pointer hover:bg-transparent rounded-lg font-medium flex items-center"
 			>
 				<svg
 					class="w-5 h-5 mr-2 transition-transform"
@@ -1538,7 +1538,7 @@
 			</summary>
 			<div class="p-4 pt-0 space-y-6">
 				<div>
-					<h4 class="text-lg font-medium text-gray-900 mb-3">Custom Call-to-Action Buttons</h4>
+					<h4 class="text-lg font-medium mb-3">Custom Call-to-Action Buttons</h4>
 					<div class="space-y-3">
 						{#each [...(product.cta || []), ...Array(productCtaLines).fill( { href: '', label: '', fallback: false } )].slice(0, productCtaLines) as link, i}
 							<div class="flex gap-4 items-end p-3 bg-blue-50 rounded-lg">
@@ -1593,7 +1593,7 @@
 				</div>
 
 				<div>
-					<h4 class="text-lg font-medium text-gray-900 mb-3">External Resources</h4>
+					<h4 class="text-lg font-medium mb-3">External Resources</h4>
 					<p class="text-sm text-gray-600 mb-3">
 						Digital files or links that will be available to customers after purchase
 					</p>
@@ -1649,14 +1649,14 @@
 
 				{#if !isNew}
 					<div>
-						<h4 class="text-lg font-medium text-gray-900 mb-3">CMS Content</h4>
+						<h4 class="text-lg font-medium mb-3">CMS Content</h4>
 						<p class="text-sm text-gray-600 mb-4">
 							Add custom HTML content or widgets to be displayed before and after the product
 							information
 						</p>
 
 						<div class="space-y-6">
-							<div class="bg-gray-50 p-4 rounded-lg">
+							<div class="bg-transparent p-4 rounded-lg">
 								<label class="form-label">
 									Content before product details
 									<label class="checkbox-label mt-2">
@@ -1707,7 +1707,7 @@
 								{/if}
 							</div>
 
-							<div class="bg-gray-50 p-4 rounded-lg">
+							<div class="bg-transparent p-4 rounded-lg">
 								<label class="form-label">
 									Content after product details
 									<label class="checkbox-label mt-2">
@@ -1776,7 +1776,7 @@
 		{/if}
 
 		<!-- Form Actions -->
-		<div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+		<div class="bg-transparent border border-gray-500 rounded-lg p-6 shadow-sm">
 			<div class="flex flex-wrap justify-between gap-3">
 				<button
 					type="submit"
